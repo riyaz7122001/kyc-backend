@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const common_1 = require("@middleware/common");
+const auth_1 = require("../../../controllers/common/auth");
+const validator_1 = require("../../../middleware/common/validator");
+const express_1 = require("express");
+const auth_2 = require("@controllers/user/auth");
+const router = (0, express_1.Router)();
+router.get('/logout', (0, auth_1.Logout)('user'));
+router.get('/profile', auth_2.GetUserProfile);
+router.put('/change-password', (0, validator_1.ChangePasswordValidationRules)(), validator_1.ValidateReqParams, common_1.ValidateChangePassword, auth_1.ChangePassword);
+exports.default = router;

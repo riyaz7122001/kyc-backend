@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const common_1 = require("@middleware/common");
+const auth_1 = require("../../controllers/common/auth");
+const validator_1 = require("../../middleware/common/validator");
+const express_1 = require("express");
+const validator_2 = require("@middleware/admin/staff/validator");
+const staff_1 = require("@middleware/admin/staff");
+const user_1 = require("@controllers/user/user");
+const router = (0, express_1.Router)();
+router.post('/create', (0, validator_2.CreateUserValidationRules)(), validator_1.ValidateReqParams, staff_1.ValidateCreateUser, staff_1.ValidateRoleById, user_1.CreateUser);
+router.post("/login", (0, validator_1.LoginValidationRules)(), validator_1.ValidateReqParams, common_1.ValidateEmail, common_1.ValidatePassword, (0, auth_1.Login)("user"));
+router.post("/otp", (0, validator_1.LoginValidationRules)(), validator_1.ValidateReqParams, common_1.ValidateEmail, common_1.ValidatePassword, auth_1.SendOtp);
+router.post("/forget-password", (0, validator_1.ForgotPasswordValidationRules)(), validator_1.ValidateReqParams, common_1.ValidateEmail, auth_1.ForgotPassword);
+router.post("/reset-password", (0, validator_1.ResetPasswordValidationRules)(), validator_1.ValidateReqParams, (0, common_1.ValidateEmailToken)("reset-password"), auth_1.ResetPassword);
+router.post("/set-password", (0, validator_1.ResetPasswordValidationRules)(), validator_1.ValidateReqParams, (0, common_1.ValidateEmailToken)("set-password"), auth_1.SetPassword);
+exports.default = router;

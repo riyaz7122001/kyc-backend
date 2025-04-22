@@ -1,0 +1,31 @@
+import { config } from "dotenv";
+config();
+
+export const {
+    APP_MODE,
+    PORT,
+    JWT_SECRET,
+    LOG_LEVEL,
+    FRONTEND_URL,
+    DB_HOST,
+    DB_PORT,
+    DB_USER,
+    DB_PASSWORD,
+    DB_NAME,
+    DB_MAX_CONNECTIONS_POOL,
+    DB_MIN_CONNECTIONS_POOL,
+    DB_ACCQUIRE_TIME,
+    DB_IDLE_TIME,
+    DB_MAX_CONNECTIONS_RETRY,
+    DB_TIMEOUT_CONNECTIONS_RETRY,
+    SMTP_EMAIL,
+    SMTP_PORT,
+    SMTP_HOST,
+    SMTP_PASSWORD,
+    EMAIL_FROM,
+    COOKIE_DOMAIN,
+    COOKIE_PATH_TALENT,
+    COOKIE_SAME_SITE,
+    COOKIE_SECURE,
+    CSRF_CHECK,
+} = process.env;

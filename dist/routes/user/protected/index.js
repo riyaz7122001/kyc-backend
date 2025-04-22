@@ -1,0 +1,20 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_1 = __importDefault(require("./auth"));
+const staff_1 = require("@controllers/admin/staff");
+const validator_1 = require("../../../middleware/admin/staff/validator");
+const validator_2 = require("../../../middleware/common/validator");
+const staff_2 = require("@middleware/admin/staff");
+const user_1 = require("@controllers/user/user");
+const router = (0, express_1.Router)();
+router.use('/auth', auth_1.default);
+router.put('/edit/:id', (0, validator_1.EditUserValidationRules)(), validator_2.ValidateReqParams, staff_2.ValidateUserId, staff_2.ValidateEditUser, staff_2.ValidateRoleById, user_1.EditUser);
+router.delete('/delete/:id', (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, staff_2.ValidateUserId, user_1.DeleteUser);
+router.put('/activation/:id', (0, validator_2.ActivationValidationRules)(), validator_2.ValidateReqParams, staff_2.ValidateUserId, staff_1.ChangeUserActivation);
+router.get('/details/:id', (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, user_1.GetUserDetails);
+router.get('/list', (0, validator_1.UserPaginationValidationRules)(), validator_2.ValidateReqParams, user_1.GetUserList);
+exports.default = router;
