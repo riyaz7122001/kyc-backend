@@ -1,8 +1,7 @@
-import emailTemplate from "@models/emailTemplates";
-import users from "@models/users"
+import { users, emailTemplate } from '../index';
 import { Transaction } from "sequelize"
 
-const getUserByEmail = async (email: string, isDeleted: boolean, transaction: Transaction) => {
+export const getUserByEmail = async (email: string, isDeleted: boolean, transaction: Transaction) => {
     const user = await users.findOne({
         attributes: ['id', 'activationStatus', 'email', 'passwordHash', 'passwordSetOn'],
         where: { email, isDeleted },
@@ -11,23 +10,22 @@ const getUserByEmail = async (email: string, isDeleted: boolean, transaction: Tr
     return user;
 }
 
-const getUserById = async (id: string, isDeleted: boolean, transaction: Transaction) => {
+export const getUserById = async (userId: number, deleted: boolean, activation: boolean | null, transaction: Transaction) => {
     const user = await users.findOne({
-        attributes: ['id', 'firstName', 'lastName', 'email'],
-        where: { id, isDeleted }, transaction
+        attributes: ["id", "activationStatus", "email", "passwordHash", "roleId"],
+        where: {
+            id: userId,
+            isDeleted: deleted,
+            ...(activation !== null && { activationStatus: activation })
+        },
+        transaction,
     });
     return user;
-}
+};
 
-const getEmailTemplate = async (title: string, transaction: Transaction) => {
+export const getEmailTemplate = async (title: string, transaction: Transaction) => {
     const template = await emailTemplate.findOne({
         where: { title }, transaction
     });
-    return template;
-}
-
-export {
-    getUserByEmail,
-    getUserById,
-    getEmailTemplate
+    return template?.content;
 }

@@ -9,7 +9,7 @@ export type EmailTemplateAttributes = {
 
 export type EmailTemplateCreationAttributes = Optional<EmailTemplateAttributes, 'id'>;
 
-export type EmailTemplateInstance = Model<EmailTemplateAttributes, EmailTemplateCreationAttributes> & EmailTemplateAttributes;
+export type EmailTemplateInstance = Model<EmailTemplateAttributes, EmailTemplateCreationAttributes> & EmailTemplateCreationAttributes;
 
 const emailTemplate = sequelize.define<EmailTemplateInstance>('emailTemplates', {
     id: {

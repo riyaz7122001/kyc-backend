@@ -10,7 +10,7 @@ export type UserAttributes = {
     phone: string;
     address: string | null;
     passwordHash: string | null;
-    passwordSetOn: Date | null;
+    passwordSetOn?: Date;
     createdOn: Date;
     createdBy: string | null;
     lastLoggedInOn: Date | null;
@@ -24,7 +24,7 @@ export type UserAttributes = {
 
 export type UserCreationAttributes = Optional<UserAttributes, "id">;
 
-export type UserInstance = Model<UserAttributes, UserCreationAttributes> & UserAttributes;
+export type UserInstance = Model<UserAttributes, UserCreationAttributes> & UserCreationAttributes;
 
 const users = sequelize.define<UserInstance>("users", {
     id: {

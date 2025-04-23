@@ -1,14 +1,36 @@
 import users from "./users";
 import roles from "./roles";
+import userKycDocs from "./userKycDocs";
+import kyc from "./kyc";
+import emailTemplate from "./emailTemplates";
+import userPassword from "./userPassword";
+import userOtp from "./userOtp";
 
-roles.hasMany(users, {
-    foreignKey: "roleId"
-});
 users.belongsTo(roles, {
-    foreignKey: "roleId"
+    foreignKey: "roleId",
+});
+roles.hasMany(users, {
+    foreignKey: "roleId",
+});
+kyc.belongsTo(users, {
+    foreignKey: "userId"
+});
+users.hasOne(kyc, {
+    foreignKey: "userId"
+});
+userKycDocs.belongsTo(kyc, {
+    foreignKey: "kycId"
+});
+kyc.hasMany(userKycDocs, {
+    foreignKey: "kycId"
 })
 
 export {
     users,
-    roles
+    roles,
+    userKycDocs,
+    kyc,
+    emailTemplate,
+    userPassword,
+    userOtp
 }

@@ -1,17 +1,18 @@
-import { getUserByEmail } from "@models/helpers";
+import { getUserByEmail, getUserById } from "@models/helpers";
 import sequelize from "@setup/database";
+import logger from "@setup/logger";
 import { ProtectedPayload } from "@type/auth";
 import { LoginPayload, RequestWithPayload, Role, WithTransaction } from "@type/index";
 import { sendResponse } from "@utility/api";
-import { decodeToken } from "@utility/auth";
+import { decodeToken, validatePassword } from "@utility/auth";
 import { NextFunction, Response } from "express";
 import { JwtPayload } from "jsonwebtoken";
 import { Transaction } from "sequelize";
 
-const ValidateToken = (userRole: Role) => async (req: RequestWithPayload<ProtectedPayload>, res: Response, next: NextFunction) => {
+export const ValidateToken = (userRole: Role) => async (req: RequestWithPayload<ProtectedPayload>, res: Response, next: NextFunction) => {
     let transaction: Transaction | null = null;
     try {
-        const token = req.cookies?.[`${userRole?.toUpperCase()}_SESSION`];
+        const token = req.cookies?.[`${userRole?.toUpperCase()}_SESSION_TOKEN`];
         if (!token) {
             return sendResponse(res, 401, "Missing session token");
         }
@@ -31,13 +32,33 @@ const ValidateToken = (userRole: Role) => async (req: RequestWithPayload<Protect
         transaction = await sequelize.transaction({
             isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ
         });
+
+        const user = await getUserById(decodedToken.id!, false, true, transaction);
+        if (!user || (user?.roleId !== 1 && userRole === "admin") || (user?.roleId !== 2 && userRole === "citizen")) {
+            await transaction.rollback();
+            return sendResponse(res, 403, "Invalid user");
+        }
+
+        if (!user.activationStatus) {
+            await transaction.rollback();
+            return sendResponse(res, 403, "Your account has been disabled, please contact system administrator");
+        }
+
+        req.transaction = transaction;
+        req.payload = {
+            userId: user.id!,
+            email: user.email,
+            passwordHash: user.passwordHash
+        }
+
+        next();
     } catch (error: any) {
         await transaction?.rollback();
         return sendResponse(res, 500, error?.message?.toString() || "Internal Server Error");
     }
 }
 
-const StartTransaction = async (req: WithTransaction, res: Response, next: NextFunction) => {
+export const StartTransaction = async (req: WithTransaction, res: Response, next: NextFunction) => {
     try {
         const transaction = await sequelize.transaction({ isolationLevel: Transaction.ISOLATION_LEVELS.REPEATABLE_READ });
 
@@ -49,7 +70,8 @@ const StartTransaction = async (req: WithTransaction, res: Response, next: NextF
     }
 }
 
-const ValidateEmail = async (req: RequestWithPayload<LoginPayload>, res: Response, next: NextFunction) => {
+export const ValidateEmail = async (req: RequestWithPayload<LoginPayload>, res: Response, next: NextFunction) => {
+    console.log("inside validate email");
     const transaction = req.transaction!;
     try {
         const email = req.body.email;
@@ -66,10 +88,11 @@ const ValidateEmail = async (req: RequestWithPayload<LoginPayload>, res: Respons
         }
 
         req.payload = {
-            userId: userDetails.id,
+            userId: userDetails.id!,
             roleId: userDetails.roleId,
             email: userDetails.email,
-            passwordHash: userDetails.passwordHash
+            passwordHash: userDetails.passwordHash,
+            passwordSetOn: userDetails.passwordSetOn
         }
         next();
     } catch (error) {
@@ -78,8 +101,32 @@ const ValidateEmail = async (req: RequestWithPayload<LoginPayload>, res: Respons
     }
 }
 
-export {
-    ValidateToken,
-    StartTransaction,
-    ValidateEmail
+export const ValidatePassword = async (req: RequestWithPayload<LoginPayload>, res: Response, next: NextFunction) => {
+    const transaction = req.transaction!;
+    try {
+        const { passwordHash, passwordSetOn } = req.payload!;
+        const { password } = req.body;
+
+        logger.debug(`passwordHash ${JSON.stringify(passwordHash)} ${passwordSetOn}`)
+
+        if (!passwordHash || !passwordSetOn) {
+            await transaction.rollback();
+            return sendResponse(res, 403, "Password not set");
+        }
+
+        const isValidPassword = await validatePassword(password, passwordHash);
+        if (!isValidPassword) {
+            await transaction.rollback();
+            return sendResponse(res, 401, "Invalid password");
+        }
+
+        req.payload = {
+            ...req.payload!
+        }
+
+        next();
+    } catch (error) {
+        await transaction.rollback();
+        sendResponse(res, 500, "Internal server error");
+    }
 }

@@ -1,19 +1,16 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '../setup/database';
 
-export interface UserPasswordAttributes {
+export type UserPasswordAttributes = {
     id: number;
     userId: string;
     passwordHash: string;
     createdOn: Date;
 }
 
-interface UserPasswordCreationAttributes
-    extends Optional<UserPasswordAttributes, 'id'> { }
+type UserPasswordCreationAttributes = Optional<UserPasswordAttributes, 'id'>;
 
-interface UserPasswordInstance
-    extends Model<UserPasswordAttributes, UserPasswordCreationAttributes>,
-    UserPasswordAttributes { }
+type UserPasswordInstance = Model<UserPasswordAttributes, UserPasswordCreationAttributes> & UserPasswordAttributes
 
 const userPassword = sequelize.define<UserPasswordInstance>('userPassword', {
     id: {
