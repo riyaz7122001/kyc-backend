@@ -18,8 +18,8 @@ const sendMail = async (toEmail, subject, html) => {
     const mailOptions = {
         from: secrets_1.EMAIL_FROM,
         to: toEmail,
-        subject: subject,
-        html: html
+        subject,
+        html
     };
     await transporter.sendMail(mailOptions);
 };

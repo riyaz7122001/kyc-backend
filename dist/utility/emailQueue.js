@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.emailQueue = void 0;
-const logger_1 = __importDefault(require("@setup/logger"));
 const async_1 = require("async");
 const mail_1 = __importDefault(require("./mail"));
 exports.emailQueue = (0, async_1.queue)(async (mail) => {
@@ -20,7 +19,7 @@ exports.emailQueue = (0, async_1.queue)(async (mail) => {
             }, mail.retry * 10 * 1000);
         }
         else {
-            logger_1.default.error("Email task failed after 3 tries");
+            console.error("Email task failed after 3 tries");
         }
     }
 }, 100);

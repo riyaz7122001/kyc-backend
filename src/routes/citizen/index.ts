@@ -1,8 +1,11 @@
 import { Router } from "express";
 import protectedRouter from "./protected"
+import authRouter from "./auth";
+import { StartTransaction, ValidateToken } from "@middleware/common";
 
 const router = Router();
 
-router.use(`/protected`, protectedRouter);
+router.use(`/protected`, ValidateToken("citizen"), protectedRouter);
+router.use(`/auth`, StartTransaction, authRouter);
 
 export default router;

@@ -1,5 +1,5 @@
 import sequelize from "@setup/database";
-import { DataTypes, literal, Model } from "sequelize";
+import { DataTypes, literal, Model, Optional } from "sequelize";
 
 export type KycAttributes = {
     id: string;
@@ -9,7 +9,8 @@ export type KycAttributes = {
     statusUpdatedBy: string | null;
 }
 
-export type KycInstance = Model<KycAttributes> & KycAttributes;
+type KycCreationAttributes = Optional<KycAttributes, "id">;
+export type KycInstance = Model<KycCreationAttributes> & KycCreationAttributes;
 
 const kyc = sequelize.define<KycInstance>("kyc", {
     id: {
@@ -28,7 +29,8 @@ const kyc = sequelize.define<KycInstance>("kyc", {
     status: {
         type: DataTypes.ENUM,
         allowNull: false,
-        values: ["pending", "verified", "rejected"]
+        values: ["pending", "verified", "rejected"],
+        defaultValue: "pending"
     },
     statusUpdatedOn: {
         type: DataTypes.DATE,

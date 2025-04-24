@@ -8,8 +8,8 @@ import router from "./routes";
 
 const server = http.createServer(app);
 
-express.use(errorHandler);
 express.use(`/api`, router);
+express.use(errorHandler);
 
 server.listen(PORT, () => {
   logger.debug(`Connection established for database ${DB_NAME} running on port ${PORT}`);

@@ -1,10 +1,10 @@
 import { Router } from "express";
-import authRouter from "../protected/auth";
-import userRouter from "../protected/user";
+import authRouter from "./auth";
+import userRouter from "./citizen";
 
 const router = Router();
 
 router.use(`/auth`, authRouter);
-router.use(`/user`, userRouter);
+router.use(`/citizen`, userRouter);
 
 export default router;

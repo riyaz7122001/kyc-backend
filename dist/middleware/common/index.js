@@ -6,14 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ValidatePassword = exports.ValidateEmail = exports.StartTransaction = exports.ValidateToken = void 0;
 const helpers_1 = require("@models/helpers");
 const database_1 = __importDefault(require("@setup/database"));
-const logger_1 = __importDefault(require("@setup/logger"));
 const api_1 = require("@utility/api");
 const auth_1 = require("@utility/auth");
 const sequelize_1 = require("sequelize");
 const ValidateToken = (userRole) => async (req, res, next) => {
     let transaction = null;
     try {
-        const token = req.cookies?.[`${userRole?.toUpperCase()}_SESSION`];
+        const token = req.cookies?.[`${userRole?.toUpperCase()}_SESSION_TOKEN`];
         if (!token) {
             return (0, api_1.sendResponse)(res, 401, "Missing session token");
         }
@@ -66,7 +65,6 @@ const StartTransaction = async (req, res, next) => {
 };
 exports.StartTransaction = StartTransaction;
 const ValidateEmail = async (req, res, next) => {
-    console.log("inside validate email");
     const transaction = req.transaction;
     try {
         const email = req.body.email;
@@ -97,12 +95,11 @@ exports.ValidateEmail = ValidateEmail;
 const ValidatePassword = async (req, res, next) => {
     const transaction = req.transaction;
     try {
-        const { passwordHash, passwordSetOn } = req.payload;
         const { password } = req.body;
-        logger_1.default.debug(`passwordHash ${JSON.stringify(passwordHash)} ${passwordSetOn}`);
+        const { passwordHash, passwordSetOn } = req.payload;
         if (!passwordHash || !passwordSetOn) {
             await transaction.rollback();
-            return (0, api_1.sendResponse)(res, 403, "Password not set");
+            return (0, api_1.sendResponse)(res, 403, "Password not set for user");
         }
         const isValidPassword = await (0, auth_1.validatePassword)(password, passwordHash);
         if (!isValidPassword) {

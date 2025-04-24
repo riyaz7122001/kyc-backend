@@ -1,6 +1,6 @@
 import { getUserByEmail, getUserById } from "@models/helpers";
+import { getUserByEmailToken } from "@models/helpers/auth";
 import sequelize from "@setup/database";
-import logger from "@setup/logger";
 import { ProtectedPayload } from "@type/auth";
 import { LoginPayload, RequestWithPayload, Role, WithTransaction } from "@type/index";
 import { sendResponse } from "@utility/api";
@@ -71,7 +71,6 @@ export const StartTransaction = async (req: WithTransaction, res: Response, next
 }
 
 export const ValidateEmail = async (req: RequestWithPayload<LoginPayload>, res: Response, next: NextFunction) => {
-    console.log("inside validate email");
     const transaction = req.transaction!;
     try {
         const email = req.body.email;
@@ -104,14 +103,12 @@ export const ValidateEmail = async (req: RequestWithPayload<LoginPayload>, res: 
 export const ValidatePassword = async (req: RequestWithPayload<LoginPayload>, res: Response, next: NextFunction) => {
     const transaction = req.transaction!;
     try {
-        const { passwordHash, passwordSetOn } = req.payload!;
         const { password } = req.body;
-
-        logger.debug(`passwordHash ${JSON.stringify(passwordHash)} ${passwordSetOn}`)
+        const { passwordHash, passwordSetOn } = req.payload!;
 
         if (!passwordHash || !passwordSetOn) {
             await transaction.rollback();
-            return sendResponse(res, 403, "Password not set");
+            return sendResponse(res, 403, "Password not set for user");
         }
 
         const isValidPassword = await validatePassword(password, passwordHash);
@@ -122,6 +119,56 @@ export const ValidatePassword = async (req: RequestWithPayload<LoginPayload>, re
 
         req.payload = {
             ...req.payload!
+        }
+
+        next();
+    } catch (error) {
+        await transaction.rollback();
+        sendResponse(res, 500, "Internal server error");
+    }
+}
+
+export const ValidateEmailToken = async (req: RequestWithPayload<LoginPayload>, res: Response, next: NextFunction) => {
+    console.log("insdie validate email token")
+    const transaction = req.transaction!
+    try {
+        const { emailToken } = req.body;
+
+        const userDetails = await getUserByEmailToken(emailToken, transaction);
+        if (!userDetails) {
+            await transaction.rollback();
+            return sendResponse(res, 401, "Invalid token");
+        }
+
+        req.payload = {
+            userId: userDetails.userId,
+            email: userDetails.user?.email!,
+            passwordHash: userDetails?.user?.passwordHash,
+            passwordSetOn: userDetails.user?.passwordSetOn,
+            roleId: userDetails?.user?.roleId!
+        }
+        next();
+    } catch (error) {
+        await transaction.rollback();
+        sendResponse(res, 500, "Internal server error");
+    }
+}
+
+export const ValidateChangePassword = async (req: RequestWithPayload<LoginPayload>, res: Response, next: NextFunction) => {
+    const transaction = req.transaction!;
+    try {
+        const { password } = req.body;
+        const { passwordHash } = req.payload!;
+
+        if (!passwordHash) {
+            await transaction.rollback();
+            return sendResponse(res, 400, "Password not set");
+        }
+
+        const isValidPassword = await validatePassword(password, passwordHash);
+        if (!isValidPassword) {
+            await transaction.rollback();
+            return sendResponse(res, 400, "Invalid Password");
         }
 
         next();

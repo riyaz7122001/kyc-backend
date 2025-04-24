@@ -3,10 +3,9 @@ import { Role } from "@type/index";
 import { compare, hash } from "bcrypt";
 import { randomBytes } from "crypto";
 import { JwtPayload, sign, verify } from "jsonwebtoken";
-import { Transaction } from "sequelize";
 
 export const decodeToken = (token: string) => {
-    if (!token) throw new Error('Missing token');
+    if (!token) throw new Error('Missing session token');
 
     return new Promise<JwtPayload>((resolve, reject) => {
         verify(token, JWT_SECRET!, (error, decodedToken) => {

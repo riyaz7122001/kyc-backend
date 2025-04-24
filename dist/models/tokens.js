@@ -5,36 +5,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const database_1 = __importDefault(require("@setup/database"));
 const sequelize_1 = require("sequelize");
-const kyc = database_1.default.define("kyc", {
+const tokens = database_1.default.define("tokens", {
     id: {
-        type: sequelize_1.DataTypes.UUID,
+        type: sequelize_1.DataTypes.INTEGER,
         allowNull: false,
+        autoIncrement: true,
         primaryKey: true,
-        defaultValue: (0, sequelize_1.literal)("gen_random_uuid()")
     },
     userId: {
         type: sequelize_1.DataTypes.UUID,
+        allowNull: false,
         references: {
             model: "users",
-            key: "id",
-        },
+            key: "id"
+        }
     },
-    status: {
-        type: sequelize_1.DataTypes.ENUM,
-        allowNull: false,
-        values: ["pending", "verified", "rejected"],
-        defaultValue: "pending"
+    token: {
+        type: sequelize_1.DataTypes.STRING(100),
+        allowNull: false
     },
-    statusUpdatedOn: {
+    createdOn: {
         type: sequelize_1.DataTypes.DATE,
-        allowNull: true
-    },
-    statusUpdatedBy: {
-        type: sequelize_1.DataTypes.UUID,
-        allowNull: true
+        allowNull: false,
     }
 }, {
-    tableName: "kyc",
-    timestamps: false
+    tableName: "tokens",
+    timestamps: false,
 });
-exports.default = kyc;
+exports.default = tokens;

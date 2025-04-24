@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import { users, emailTemplate } from '../index';
 import { Transaction } from "sequelize"
 
@@ -28,4 +29,18 @@ export const getEmailTemplate = async (title: string, transaction: Transaction) 
         where: { title }, transaction
     });
     return template?.content;
+}
+
+export const getUserByPhone = async (phone: string, exceptionId: string | null, transaction: Transaction) => {
+    const staff = await users.findOne({
+        attributes: ['id'],
+        where: {
+            phone,
+            isDeleted: false,
+            ...(exceptionId && { id: { [Op.ne]: exceptionId } }),
+        },
+        transaction
+    });
+
+    return staff;
 }

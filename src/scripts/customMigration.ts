@@ -5,10 +5,6 @@ import logger from "@setup/logger";
 const adminMigrationsFolder = "migrations";
 const seedersFolder = "seeders";
 
-// Arguments passed like: `npm run migrate admin`
-const args = process.argv.slice(2);
-console.log("args", args);
-
 const runMigration = () => {
     try {
         logger.debug("Running Admin Migrations...");

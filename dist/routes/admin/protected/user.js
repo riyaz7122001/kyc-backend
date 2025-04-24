@@ -1,15 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const staff_1 = require("@middleware/admin/staff");
-const staff_2 = require("@controllers/admin/staff");
-const validator_1 = require("../../../middleware/admin/staff/validator");
-const validator_2 = require("../../../middleware/common/validator");
 const express_1 = require("express");
 const router = (0, express_1.Router)();
-router.post('/create', (0, validator_1.CreateUserValidationRules)(), validator_2.ValidateReqParams, staff_1.ValidateCreateUser, staff_1.ValidateRoleById, staff_2.CreateUser);
-router.put('/edit/:id', (0, validator_1.EditUserValidationRules)(), validator_2.ValidateReqParams, staff_1.ValidateUserId, staff_1.ValidateEditUser, staff_2.EditUser);
-router.delete('/delete/:id', (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, staff_1.ValidateUserId, staff_2.DeleteUser);
-router.put('/activation/:id', (0, validator_2.ActivationValidationRules)(), validator_2.ValidateReqParams, staff_1.ValidateUserId, staff_2.ChangeUserActivation);
-router.get('/details/:id', (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, staff_2.GetUserDetails);
-router.get('/list', (0, validator_1.UserPaginationValidationRules)(), validator_2.ValidateReqParams, staff_2.GetUserList);
+// router.get("/list", GetUsersList);
 exports.default = router;

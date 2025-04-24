@@ -1,13 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getEmailTemplate = exports.getUserById = exports.getUserByEmail = void 0;
-const emailTemplates_1 = __importDefault(require("@models/emailTemplates"));
-const users_1 = __importDefault(require("@models/users"));
+const index_1 = require("../index");
 const getUserByEmail = async (email, isDeleted, transaction) => {
-    const user = await users_1.default.findOne({
+    const user = await index_1.users.findOne({
         attributes: ['id', 'activationStatus', 'email', 'passwordHash', 'passwordSetOn'],
         where: { email, isDeleted },
         transaction
@@ -16,7 +12,7 @@ const getUserByEmail = async (email, isDeleted, transaction) => {
 };
 exports.getUserByEmail = getUserByEmail;
 const getUserById = async (userId, deleted, activation, transaction) => {
-    const user = await users_1.default.findOne({
+    const user = await index_1.users.findOne({
         attributes: ["id", "activationStatus", "email", "passwordHash", "roleId"],
         where: {
             id: userId,
@@ -29,7 +25,7 @@ const getUserById = async (userId, deleted, activation, transaction) => {
 };
 exports.getUserById = getUserById;
 const getEmailTemplate = async (title, transaction) => {
-    const template = await emailTemplates_1.default.findOne({
+    const template = await index_1.emailTemplate.findOne({
         where: { title }, transaction
     });
     return template?.content;

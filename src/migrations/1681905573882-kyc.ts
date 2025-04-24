@@ -25,6 +25,7 @@ module.exports = {
             status: {
                 type: ENUM("pending", "verified", "rejected"),
                 allowNull: false,
+                defaultValue: "pending"
             },
             statusUpdatedOn: {
                 type: DATE,

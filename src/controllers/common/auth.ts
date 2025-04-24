@@ -1,11 +1,11 @@
 import { getEmailTemplate } from "@models/helpers";
-import { deleteOtps, saveOtp, useOtp, validateOtp } from "@models/helpers/auth";
+import { deleteOtps, revokeEmailTokens, saveEmailToken, saveOtp, updatePassword, updatePreviousPassword, useOtp, validateOtp } from "@models/helpers/auth";
 import logger from "@setup/logger";
 import { COOKIE_SAME_SITE, COOKIE_SECURE, FRONTEND_URL } from "@setup/secrets";
 import { ProtectedPayload } from "@type/auth";
 import { LoginPayload, RequestWithPayload, Role } from "@type/index";
 import { generateOtp, sendResponse } from "@utility/api"
-import { generateJWTToken, generateRefreshToken } from "@utility/auth";
+import { generateJWTToken, generateRefreshToken, hashPassword } from "@utility/auth";
 import { emailQueue } from "@utility/emailQueue";
 import { NextFunction, Response } from "express"
 import moment from "moment";
@@ -63,13 +63,13 @@ export const SendOtp = async (req: RequestWithPayload<LoginPayload>, res: Respon
         await saveOtp(userId, otp, transaction);
         logger.debug(`Otp saved successfully`);
 
-        logger.debug(`Getting emailTemplate for Otp`)
+        logger.debug(`Getting template for Otp`)
         const emailTemplate = await getEmailTemplate("otp", transaction);
         if (!emailTemplate) {
             await transaction.rollback();
-            return sendResponse(res, 500, "Email template not found");
+            return sendResponse(res, 500, "Template not found");
         }
-        logger.debug(`Emailtemplate fetched successfully`);
+        logger.debug(`Template fetched successfully`);
 
         const html = emailTemplate.replace("{%otp%}", otp);
         const subject = "One time password";
@@ -91,6 +91,7 @@ export const ForgotPassword = async (req: RequestWithPayload<LoginPayload>, res:
     const transaction = req.transaction!;
     try {
         const { email } = req.body;
+        const { userId } = req.payload!;
 
         logger.debug(`Fetching template for forgot password`);
         const emailTemplate = await getEmailTemplate("forgot-password", transaction);
@@ -104,8 +105,15 @@ export const ForgotPassword = async (req: RequestWithPayload<LoginPayload>, res:
         const expiry = moment().add(10, "minutes").toDate().toISOString();
         const redirectUrl = `${FRONTEND_URL}/auth/reset-password?token=${emailToken}&expiry=${expiry}`;
         const html = emailTemplate.replace("{%reset-password-url%}", redirectUrl);
-
         const subject = "Forgot Password";
+
+        logger.debug(`Revoking previous email tokens`);
+        await revokeEmailTokens(userId, transaction);
+        logger.debug(`Tokens revoked successfully`);
+
+        logger.debug(`Saving email token`);
+        await saveEmailToken(userId, emailToken, transaction);
+        logger.debug(`Email token saved successfully`);
 
         logger.debug(`Sending email to: ${email}`);
         emailQueue.push({ to: email, subject: subject, html: html, retry: 0 });
@@ -123,7 +131,28 @@ export const ForgotPassword = async (req: RequestWithPayload<LoginPayload>, res:
 export const ResetPassword = async (req: RequestWithPayload<LoginPayload>, res: Response, next: NextFunction) => {
     const transaction = req.transaction!;
     try {
+        const { password } = req.body;
+        const { userId } = req.payload!;
 
+        logger.debug(`Hashing password for userId: ${password}`);
+        const hashedPassword = await hashPassword(password);
+        logger.debug(`Password hashed successfully`);
+
+        logger.debug(`Updating password for userId: ${userId}`);
+        await updatePassword(userId, hashedPassword, transaction);
+        logger.debug(`Password updated successfully`);
+
+        logger.debug(`Updating previous password for userId: ${userId}`);
+        await updatePreviousPassword(userId, hashedPassword, transaction);
+        logger.debug(`Password updated successfully`);
+
+        logger.debug(`Revoking previous email tokens`);
+        await revokeEmailTokens(userId, transaction);
+        logger.debug(`Tokens revoked successfully`);
+
+        await transaction.commit();
+
+        sendResponse(res, 200, "Password reset successfully");
     } catch (error) {
         await transaction.rollback();
         next(error);
@@ -133,7 +162,28 @@ export const ResetPassword = async (req: RequestWithPayload<LoginPayload>, res: 
 export const SetPassword = async (req: RequestWithPayload<LoginPayload>, res: Response, next: NextFunction) => {
     const transaction = req.transaction!;
     try {
+        const { password } = req.body;
+        const { userId } = req.payload!;
 
+        logger.debug(`Hashing password for userId: ${password}`);
+        const hashedPassword = await hashPassword(password);
+        logger.debug(`Password hashed successfully`);
+
+        logger.debug(`Updating password for userId: ${userId}`);
+        await updatePassword(userId, hashedPassword, transaction);
+        logger.debug(`Password updated successfully`);
+
+        logger.debug(`Updating previous password for userId: ${userId}`);
+        await updatePreviousPassword(userId, hashedPassword, transaction);
+        logger.debug(`Password updated successfully`);
+
+        logger.debug(`Revoking previous email tokens`);
+        await revokeEmailTokens(userId, transaction);
+        logger.debug(`Tokens revoked successfully`);
+
+        await transaction.commit();
+
+        sendResponse(res, 200, "Password set successfully");
     } catch (error) {
         await transaction.rollback();
         next(error);
@@ -141,7 +191,7 @@ export const SetPassword = async (req: RequestWithPayload<LoginPayload>, res: Re
 }
 
 export const Logout = (userRole: Role) => async (req: RequestWithPayload<ProtectedPayload>, res: Response, next: NextFunction) => {
-    const transaction = req.transaction!
+    const transaction = req.transaction!;
     try {
         res.clearCookie(`${userRole.toUpperCase()}_SESSION_TOKEN`, {
             sameSite: COOKIE_SAME_SITE as "lax" | "strict" | "none",
@@ -152,6 +202,33 @@ export const Logout = (userRole: Role) => async (req: RequestWithPayload<Protect
         await transaction.commit();
 
         sendResponse(res, 200, "User logged out successfully");
+    } catch (error) {
+        await transaction.rollback();
+        next(error);
+    }
+}
+
+export const ChangePassword = async (req: RequestWithPayload<LoginPayload>, res: Response, next: NextFunction) => {
+    const transaction = req.transaction!;
+    try {
+        const { userId } = req.payload!;
+        const { newPassword } = req.body;
+
+        logger.debug(`Hashing new password`);
+        const hash = await hashPassword(newPassword);
+        logger.debug(`Password hashed successfully`);
+
+        logger.debug(`Updating password for userId: ${userId}`);
+        await updatePassword(userId, hash, transaction);
+        logger.debug(`Password updated successfully`);
+
+        logger.debug(`Updating previous password for userId: ${userId}`);
+        await updatePreviousPassword(userId, hash, transaction);
+        logger.debug(`Password updated successfully`);
+
+        await transaction.commit();
+
+        sendResponse(res, 200, "Password changed successfully");
     } catch (error) {
         await transaction.rollback();
         next(error);

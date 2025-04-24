@@ -1,7 +1,7 @@
 import { WithTransaction } from "@type/index";
 import { sendResponse } from "../../utility/api";
 import { NextFunction, Response } from "express";
-import { body, validationResult } from "express-validator";
+import { body, param, query, validationResult } from "express-validator";
 
 export const ValidateReqParams = async (req: WithTransaction, res: Response, next: NextFunction) => {
     const errors = validationResult(req)
@@ -105,5 +105,37 @@ export const ChangePasswordValidationRules = () => {
             .isString().withMessage('New Password must be of type String').bail()
             .isLength({ min: 6, max: 20 }).withMessage('New Password must be between 6 to 20 characters')
             .isStrongPassword({ minLength: 6, minLowercase: 1, minUppercase: 1, minNumbers: 1, minSymbols: 1 }).withMessage('New Password must contain atleast one lowercase, uppercase, number and special characters'),
+    ]
+}
+
+export const PaginationValidationRules = () => {
+    return [
+        query('size')
+            .not().isEmpty().withMessage('Size is required').bail()
+            .isInt({ min: 1, max: 100 }).withMessage('Size must be an Integer, between 1 and 100').bail()
+            .toInt(),
+        query('page')
+            .not().isEmpty().withMessage('Page is required').bail()
+            .isInt({ min: 1 }).withMessage('Page must be an Integer, greater than 0').bail()
+            .toInt(),
+        query('search')
+            .optional({ values: 'falsy' })
+            .toLowerCase()
+            .trim(),
+        query('sortKey')
+            .optional({ values: 'falsy' })
+            .isIn(['name', 'email', 'phone', 'role', 'active']).withMessage('SortKey should be one of name, email, phone, role, active')
+            .trim(),
+        query('sortDir')
+            .optional({ values: 'falsy' })
+            .isIn(['ASC', 'DESC']).withMessage('SortDir should be one of ASC, DESC')
+            .trim(),
+    ]
+}
+
+export const IdValidationRules = () => {
+    return [
+        param('id')
+            .isUUID().withMessage('Id must be of type UUID').bail(),
     ]
 }

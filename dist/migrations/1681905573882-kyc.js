@@ -23,6 +23,7 @@ module.exports = {
             status: {
                 type: (0, sequelize_1.ENUM)("pending", "verified", "rejected"),
                 allowNull: false,
+                defaultValue: "pending"
             },
             statusUpdatedOn: {
                 type: sequelize_1.DATE,

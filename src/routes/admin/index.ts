@@ -1,6 +1,6 @@
 import { Router } from "express";
 import protectedRouter from "./protected";
-import authRouter from "../auth"
+import authRouter from "./auth"
 import { StartTransaction, ValidateToken } from "@middleware/common";
 
 const router = Router();

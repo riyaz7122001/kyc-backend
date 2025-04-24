@@ -1,7 +1,7 @@
 import moment from "moment";
 import { Op } from "sequelize";
 import { Transaction } from "sequelize";
-import { users, roles, userOtp } from '../index';
+import { users, roles, userOtp, userPassword, tokens } from '../index';
 
 export const deleteOtps = async (userId: string, transaction: Transaction) => {
     await userOtp.destroy({
@@ -64,6 +64,54 @@ export const getUserProfile = async (userId: string, transaction: Transaction) =
             isDeleted: false,
             activationStatus: true
         }, transaction
+    });
+
+    return user;
+}
+
+export const updatePassword = async (userId: string, passwordHash: string, transaction: Transaction) => {
+    const [count] = await users.update({
+        passwordHash,
+        passwordSetOn: new Date()
+    }, {
+        where: {
+            id: userId
+        }, transaction
+    });
+
+    if (count === 0) throw new Error("Password cannot be updated")
+}
+
+export const updatePreviousPassword = async (userId: string, passwordHash: string, transaction: Transaction) => {
+    await userPassword.create({
+        userId,
+        passwordHash,
+        createdOn: new Date
+    }, { transaction });
+}
+
+export const revokeEmailTokens = async (userId: string, transaction: Transaction) => {
+    await tokens.destroy({
+        where: { userId }, transaction
+    });
+}
+
+export const saveEmailToken = async (userId: string, token: string, transaction: Transaction) => {
+    await tokens.create({
+        userId,
+        token,
+        createdOn: new Date()
+    }, { transaction });
+}
+
+export const getUserByEmailToken = async (emailToken: string, transaction: Transaction) => {
+    const user = await tokens.findOne({
+        include: [{
+            attributes: ['id', 'email', 'passwordHash', 'passwordSetOn', 'roleId'],
+            model: users,
+            foreignKey: "userId"
+        }],
+        where: { token: emailToken }, transaction
     });
 
     return user;

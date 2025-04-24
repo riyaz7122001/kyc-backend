@@ -5,6 +5,7 @@ import kyc from "./kyc";
 import emailTemplate from "./emailTemplates";
 import userPassword from "./userPassword";
 import userOtp from "./userOtp";
+import tokens from "./tokens";
 
 users.belongsTo(roles, {
     foreignKey: "roleId",
@@ -23,6 +24,12 @@ userKycDocs.belongsTo(kyc, {
 });
 kyc.hasMany(userKycDocs, {
     foreignKey: "kycId"
+});
+tokens.belongsTo(users, {
+    foreignKey: "userId"
+});
+users.hasMany(tokens, {
+    foreignKey: "userId"
 })
 
 export {
@@ -32,5 +39,6 @@ export {
     kyc,
     emailTemplate,
     userPassword,
-    userOtp
+    userOtp,
+    tokens
 }
