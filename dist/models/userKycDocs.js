@@ -20,14 +20,17 @@ const userKycDocs = database_1.default.define("userKycDocs", {
             model: "kyc",
             key: "id",
         },
+        unique: true
     },
     adharCardPic: {
         type: sequelize_1.DataTypes.TEXT,
-        allowNull: true
+        allowNull: true,
+        defaultValue: null
     },
     panCardPic: {
         type: sequelize_1.DataTypes.TEXT,
-        allowNull: true
+        allowNull: true,
+        defaultValue: null
     },
     adharNumber: {
         type: sequelize_1.DataTypes.STRING(50),

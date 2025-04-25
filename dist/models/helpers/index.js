@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getEmailTemplate = exports.getUserById = exports.getUserByEmail = void 0;
+exports.getUserByPhone = exports.getEmailTemplate = exports.getUserById = exports.getUserByEmail = void 0;
+const sequelize_1 = require("sequelize");
 const index_1 = require("../index");
 const getUserByEmail = async (email, isDeleted, transaction) => {
     const user = await index_1.users.findOne({
@@ -31,3 +32,16 @@ const getEmailTemplate = async (title, transaction) => {
     return template?.content;
 };
 exports.getEmailTemplate = getEmailTemplate;
+const getUserByPhone = async (phone, exceptionId, transaction) => {
+    const staff = await index_1.users.findOne({
+        attributes: ['id'],
+        where: {
+            phone,
+            isDeleted: false,
+            ...(exceptionId && { id: { [sequelize_1.Op.ne]: exceptionId } }),
+        },
+        transaction
+    });
+    return staff;
+};
+exports.getUserByPhone = getUserByPhone;

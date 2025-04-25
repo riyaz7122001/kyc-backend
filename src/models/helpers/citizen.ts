@@ -1,4 +1,4 @@
-import { users, roles, kyc } from '../index';
+import { users, roles, kyc, userKycDocs } from '../index';
 import { Op, Order, Transaction } from "sequelize";
 
 export const getCitizenList = async (limit: number, offset: number, sortKey: string | null, sortDir: 'ASC' | 'DESC' | null, search: string | null, transaction: Transaction) => {
@@ -79,6 +79,20 @@ export const editCitizen = async (userId: string, email: string, firstName: stri
 }
 
 export const deleteCitizen = async (userId: string, deletedBy: string, transaction: Transaction) => {
+    const userKycRecord = await kyc.findOne({ where: { userId }, transaction });
+
+    if (userKycRecord) {
+        await userKycDocs.destroy({
+            where: { kycId: userKycRecord.id },
+            transaction
+        });
+
+        await kyc.destroy({
+            where: { userId },
+            transaction
+        });
+    }
+
     await users.update({
         isDeleted: true,
         deletedOn: new Date(),
@@ -87,7 +101,8 @@ export const deleteCitizen = async (userId: string, deletedBy: string, transacti
         where: { id: userId },
         transaction
     });
-}
+};
+
 
 export const getCitizenById = async (userId: string, deleted: boolean, transaction: Transaction) => {
     const data = await users.findOne({
@@ -146,11 +161,83 @@ export const getCitizenByEmail = async (email: string, exceptionId: string | nul
     return staff;
 }
 
-export const updateKycStatus = async (userId: string, status: "pending" | "verified" | "rejected", transaction: Transaction) => {
+export const updateKycStatus = async (userId: string, status: "pending" | "processing" | "verified" | "rejected", statusUpdatedBy: string, transaction: Transaction) => {
     await kyc.create({
         userId,
         status,
         statusUpdatedOn: new Date(),
-        statusUpdatedBy: userId
+        statusUpdatedBy: statusUpdatedBy
     }, { transaction });
+}
+
+export const getUserKyc = async (userId: string, transaction: Transaction) => {
+    const userKycRecord = await kyc.findOne({
+        attributes: ['id', 'status', 'statusUpdatedOn', 'statusUpdatedBy'],
+        where: { userId }, transaction
+    });
+
+    return userKycRecord;
+}
+
+export const upsertKycDocsDocuments = async (
+    kycId: string,
+    adharBase64: string | null,
+    panBase64: string | null,
+    adharNumber: string | null,
+    panNumber: string | null,
+    transaction: Transaction
+) => {
+    const existingRecord = await userKycDocs.findOne({
+        where: { kycId },
+        transaction,
+    });
+
+    if (existingRecord) {
+        const updatedRecord = await existingRecord.update(
+            {
+                adharCardPic: adharBase64 ?? existingRecord.adharCardPic,
+                panCardPic: panBase64 ?? existingRecord.panCardPic,
+                adharNumber: adharNumber ?? existingRecord.adharNumber,
+                panNumber: panNumber ?? existingRecord.panNumber,
+            },
+            { transaction }
+        );
+        return { record: updatedRecord, created: false };
+    } else {
+        const newRecord = await userKycDocs.create(
+            {
+                kycId,
+                adharCardPic: adharBase64,
+                panCardPic: panBase64,
+                adharNumber,
+                panNumber,
+            },
+            { transaction }
+        );
+        return { record: newRecord, created: true };
+    }
+};
+
+export const updateCitizenKycStatus = async (userId: string, status: "pending" | "processing" | "verified" | "rejected", statusUpdatedBy: string, transaction: Transaction) => {
+    await kyc.update({
+        userId,
+        status,
+        statusUpdatedOn: new Date(),
+        statusUpdatedBy: statusUpdatedBy
+    }, {
+        where: { userId }, transaction
+    });
+}
+
+export const getUserKycDocs = async (adharNumber: string, panNumber: string, transaction: Transaction) => {
+    const userDocs = await userKycDocs.findOne({
+        where: {
+            [Op.or]: [
+                { adharNumber },
+                { panNumber }
+            ]
+        }, transaction
+    });
+
+    return userDocs;
 }

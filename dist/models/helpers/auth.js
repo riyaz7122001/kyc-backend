@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updatePreviousPassword = exports.updatePassword = exports.getUserProfile = exports.useOtp = exports.validateOtp = exports.getUserById = exports.saveOtp = exports.deleteOtps = void 0;
+exports.getUserByEmailToken = exports.saveEmailToken = exports.revokeEmailTokens = exports.updatePreviousPassword = exports.updatePassword = exports.getUserProfile = exports.useOtp = exports.validateOtp = exports.getUserById = exports.saveOtp = exports.deleteOtps = void 0;
 const moment_1 = __importDefault(require("moment"));
 const sequelize_1 = require("sequelize");
 const index_1 = require("../index");
@@ -92,3 +92,29 @@ const updatePreviousPassword = async (userId, passwordHash, transaction) => {
     }, { transaction });
 };
 exports.updatePreviousPassword = updatePreviousPassword;
+const revokeEmailTokens = async (userId, transaction) => {
+    await index_1.tokens.destroy({
+        where: { userId }, transaction
+    });
+};
+exports.revokeEmailTokens = revokeEmailTokens;
+const saveEmailToken = async (userId, token, transaction) => {
+    await index_1.tokens.create({
+        userId,
+        token,
+        createdOn: new Date()
+    }, { transaction });
+};
+exports.saveEmailToken = saveEmailToken;
+const getUserByEmailToken = async (emailToken, transaction) => {
+    const user = await index_1.tokens.findOne({
+        include: [{
+                attributes: ['id', 'email', 'passwordHash', 'passwordSetOn', 'roleId'],
+                model: index_1.users,
+                foreignKey: "userId"
+            }],
+        where: { token: emailToken }, transaction
+    });
+    return user;
+};
+exports.getUserByEmailToken = getUserByEmailToken;

@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const citizen_1 = require("@controllers/citizen/citizen");
+const auth_1 = require("@controllers/common/auth");
+const citizen_2 = require("@middleware/citizen");
+const validator_1 = require("@middleware/citizen/validator");
+const common_1 = require("@middleware/common");
+const validator_2 = require("@middleware/common/validator");
+const express_1 = require("express");
+const router = (0, express_1.Router)();
+router.post("/register", (0, validator_1.CreateCitizenValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCreateCitizen, citizen_1.CreateCitizen);
+router.post("/login", (0, validator_2.LoginOtpValidationRules)(), validator_2.ValidateReqParams, common_1.ValidateEmail, common_1.ValidatePassword, (0, auth_1.Login)("citizen"));
+router.post("/otp", (0, validator_2.LoginValidationRules)(), validator_2.ValidateReqParams, common_1.ValidateEmail, common_1.ValidatePassword, auth_1.SendOtp);
+router.post("/forgot-password", (0, validator_2.ForgotPasswordValidationRules)(), validator_2.ValidateReqParams, common_1.ValidateEmail, auth_1.ForgotPassword);
+router.post("/reset-password", (0, validator_2.ResetPasswordValidationRules)(), validator_2.ValidateReqParams, common_1.ValidateEmailToken, auth_1.ResetPassword);
+router.post("/set-password", (0, validator_2.ResetPasswordValidationRules)(), validator_2.ValidateReqParams, common_1.ValidateEmailToken, auth_1.SetPassword);
+exports.default = router;

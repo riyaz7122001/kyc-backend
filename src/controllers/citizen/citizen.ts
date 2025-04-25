@@ -1,6 +1,6 @@
 import { getEmailTemplate } from "@models/helpers";
 import { revokeEmailTokens, saveEmailToken } from "@models/helpers/auth";
-import { changeCitizenActivation, createCitizen, deleteCitizen, editCitizen, getCitizenDetails, getCitizenList } from "@models/helpers/citizen";
+import { changeCitizenActivation, createCitizen, deleteCitizen, editCitizen, getCitizenDetails, getCitizenList, getUserKyc, updateKycStatus, upsertKycDocsDocuments } from "@models/helpers/citizen";
 import logger from "@setup/logger";
 import { FRONTEND_URL } from "@setup/secrets";
 import { ProtectedPayload } from "@type/auth";
@@ -57,6 +57,10 @@ export const CreateCitizen = async (req: RequestWithPayload<ProtectedPayload>, r
         logger.debug(`Saving email token`);
         await saveEmailToken(user.id!, emailToken, transaction);
         logger.debug(`Email token saved successfully`);
+
+        logger.debug(`Updating status for userId: ${user.id}`);
+        await updateKycStatus(user.id!, "pending", user.id!, transaction);
+        logger.debug(`Kyc status updated successfully`);
 
         logger.debug(`Sending email to: ${email}`);
         emailQueue.push({ to: email, subject: subject, html: html, retry: 0 });
@@ -154,6 +158,42 @@ export const ChangeCitizenActivation = async (req: RequestWithPayload<ProtectedP
 export const UploadDocs = async (req: RequestWithPayload<ProtectedPayload>, res: Response, next: NextFunction) => {
     const transaction = req.transaction!;
     try {
+        const { userId } = req.payload!;
+        const { adharNumber, panNumber } = req.body;
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+        const adharBuffer = files?.adharCardPic?.[0]?.buffer;
+        const panBuffer = files?.panCardPic?.[0]?.buffer;
+
+        const adharBase64 = adharBuffer
+            ? `data:${files.adharCardPic[0].mimetype};base64,${adharBuffer.toString("base64")}`
+            : null;
+
+        const panBase64 = panBuffer
+            ? `data:${files.panCardPic[0].mimetype};base64,${panBuffer.toString("base64")}`
+            : null;
+
+        logger.debug(`Getting kyc record for userId: ${userId}`);
+        const userKycRecord = await getUserKyc(userId, transaction);
+        console.log("userKycRecord", userKycRecord);
+        if (!userKycRecord) {
+            await transaction.rollback();
+            return sendResponse(res, 400, "Kyc record not found for user");
+        }
+        logger.debug(`User kyc record fetched successfully`);
+
+        if (userKycRecord.status === "pending" || userKycRecord.status === "rejected") {
+            logger.debug(`Uploading Aadhaar/Pan card document`);
+            const { created } = await upsertKycDocsDocuments(userKycRecord.id!, adharBase64, panBase64, adharNumber, panNumber, transaction);
+            if (created) logger.debug(`Document uploaded successfully`);
+
+            logger.debug(`Updating status from pending to processing`);
+            updateKycStatus(userId, "processing", userId, transaction);
+            logger.debug(`Status updated successfully`)
+        } else {
+            await transaction.rollback();
+            return sendResponse(res, 500, "Your Kyc is already up to date");
+        }
 
         await transaction.commit();
 

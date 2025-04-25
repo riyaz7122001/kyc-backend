@@ -6,6 +6,6 @@ import { StartTransaction, ValidateToken } from "@middleware/common";
 const router = Router();
 
 router.use(`/protected`, ValidateToken("admin"), protectedRouter);
-router.use(`/auth`, StartTransaction, authRouter)
+router.use(`/auth`, StartTransaction, authRouter);
 
 export default router;

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Logout = exports.SetPassword = exports.ResetPassword = exports.ForgotPassword = exports.SendOtp = exports.Login = void 0;
+exports.ChangePassword = exports.Logout = exports.SetPassword = exports.ResetPassword = exports.ForgotPassword = exports.SendOtp = exports.Login = void 0;
 const helpers_1 = require("@models/helpers");
 const auth_1 = require("@models/helpers/auth");
 const logger_1 = __importDefault(require("@setup/logger"));
@@ -82,6 +82,7 @@ const ForgotPassword = async (req, res, next) => {
     const transaction = req.transaction;
     try {
         const { email } = req.body;
+        const { userId } = req.payload;
         logger_1.default.debug(`Fetching template for forgot password`);
         const emailTemplate = await (0, helpers_1.getEmailTemplate)("forgot-password", transaction);
         if (!emailTemplate) {
@@ -94,6 +95,12 @@ const ForgotPassword = async (req, res, next) => {
         const redirectUrl = `${secrets_1.FRONTEND_URL}/auth/reset-password?token=${emailToken}&expiry=${expiry}`;
         const html = emailTemplate.replace("{%reset-password-url%}", redirectUrl);
         const subject = "Forgot Password";
+        logger_1.default.debug(`Revoking previous email tokens`);
+        await (0, auth_1.revokeEmailTokens)(userId, transaction);
+        logger_1.default.debug(`Tokens revoked successfully`);
+        logger_1.default.debug(`Saving email token`);
+        await (0, auth_1.saveEmailToken)(userId, emailToken, transaction);
+        logger_1.default.debug(`Email token saved successfully`);
         logger_1.default.debug(`Sending email to: ${email}`);
         emailQueue_1.emailQueue.push({ to: email, subject: subject, html: html, retry: 0 });
         logger_1.default.debug(`Email sent successfully`);
@@ -109,7 +116,7 @@ exports.ForgotPassword = ForgotPassword;
 const ResetPassword = async (req, res, next) => {
     const transaction = req.transaction;
     try {
-        const { emailToken, password } = req.body;
+        const { password } = req.body;
         const { userId } = req.payload;
         logger_1.default.debug(`Hashing password for userId: ${password}`);
         const hashedPassword = await (0, auth_2.hashPassword)(password);
@@ -120,6 +127,9 @@ const ResetPassword = async (req, res, next) => {
         logger_1.default.debug(`Updating previous password for userId: ${userId}`);
         await (0, auth_1.updatePreviousPassword)(userId, hashedPassword, transaction);
         logger_1.default.debug(`Password updated successfully`);
+        logger_1.default.debug(`Revoking previous email tokens`);
+        await (0, auth_1.revokeEmailTokens)(userId, transaction);
+        logger_1.default.debug(`Tokens revoked successfully`);
         await transaction.commit();
         (0, api_1.sendResponse)(res, 200, "Password reset successfully");
     }
@@ -132,6 +142,22 @@ exports.ResetPassword = ResetPassword;
 const SetPassword = async (req, res, next) => {
     const transaction = req.transaction;
     try {
+        const { password } = req.body;
+        const { userId } = req.payload;
+        logger_1.default.debug(`Hashing password for userId: ${password}`);
+        const hashedPassword = await (0, auth_2.hashPassword)(password);
+        logger_1.default.debug(`Password hashed successfully`);
+        logger_1.default.debug(`Updating password for userId: ${userId}`);
+        await (0, auth_1.updatePassword)(userId, hashedPassword, transaction);
+        logger_1.default.debug(`Password updated successfully`);
+        logger_1.default.debug(`Updating previous password for userId: ${userId}`);
+        await (0, auth_1.updatePreviousPassword)(userId, hashedPassword, transaction);
+        logger_1.default.debug(`Password updated successfully`);
+        logger_1.default.debug(`Revoking previous email tokens`);
+        await (0, auth_1.revokeEmailTokens)(userId, transaction);
+        logger_1.default.debug(`Tokens revoked successfully`);
+        await transaction.commit();
+        (0, api_1.sendResponse)(res, 200, "Password set successfully");
     }
     catch (error) {
         await transaction.rollback();
@@ -156,3 +182,26 @@ const Logout = (userRole) => async (req, res, next) => {
     }
 };
 exports.Logout = Logout;
+const ChangePassword = async (req, res, next) => {
+    const transaction = req.transaction;
+    try {
+        const { userId } = req.payload;
+        const { newPassword } = req.body;
+        logger_1.default.debug(`Hashing new password`);
+        const hash = await (0, auth_2.hashPassword)(newPassword);
+        logger_1.default.debug(`Password hashed successfully`);
+        logger_1.default.debug(`Updating password for userId: ${userId}`);
+        await (0, auth_1.updatePassword)(userId, hash, transaction);
+        logger_1.default.debug(`Password updated successfully`);
+        logger_1.default.debug(`Updating previous password for userId: ${userId}`);
+        await (0, auth_1.updatePreviousPassword)(userId, hash, transaction);
+        logger_1.default.debug(`Password updated successfully`);
+        await transaction.commit();
+        (0, api_1.sendResponse)(res, 200, "Password changed successfully");
+    }
+    catch (error) {
+        await transaction.rollback();
+        next(error);
+    }
+};
+exports.ChangePassword = ChangePassword;

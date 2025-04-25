@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const citizen_1 = require("@controllers/admin/citizen");
+const citizen_2 = require("@middleware/citizen");
+const validator_1 = require("@middleware/citizen/validator");
+const validator_2 = require("@middleware/common/validator");
+const express_1 = require("express");
+const router = (0, express_1.Router)();
+router.get("/list", (0, validator_2.PaginationValidationRules)(), validator_2.ValidateReqParams, citizen_1.GetCitizensList);
+router.get("/details/:id", (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_1.GetCitizenDetails);
+router.post("/create", (0, validator_1.CreateCitizenValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCreateCitizen, citizen_1.CreateCitizen);
+router.put("/edit/:id", (0, validator_1.EditCitizenValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_2.ValidateEditCitizen, citizen_1.EditCitizen);
+router.delete("/delete/:id", (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_1.DeleteCitizen);
+router.put("/activation/:id", (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_1.ChangeCitizenActivation);
+router.put("/accept/:id", (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_1.AcceptKyc);
+router.put("/reject/:id", (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_1.RejectKyc);
+exports.default = router;

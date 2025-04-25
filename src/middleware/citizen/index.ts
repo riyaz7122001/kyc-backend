@@ -2,7 +2,7 @@ import { WithTransaction } from "@type/index";
 import { NextFunction, Response } from "express";
 import { sendResponse } from "@utility/api";
 import { getUserByPhone } from "@models/helpers";
-import { getCitizenByEmail, getCitizenById, getRoleById } from "@models/helpers/citizen";
+import { getCitizenByEmail, getCitizenById, getRoleById, getUserKycDocs } from "@models/helpers/citizen";
 
 export const ValidateCreateCitizen = async (req: WithTransaction, res: Response, next: NextFunction) => {
     const transaction = req.transaction!;
@@ -84,5 +84,34 @@ export const ValidateRoleById = async (req: WithTransaction, res: Response, next
     } catch (error) {
         await transaction.rollback();
         return sendResponse(res, 500, 'Error while validating role id');
+    }
+}
+
+export const ValidateKycDocs = async (req: WithTransaction, res: Response, next: NextFunction) => {
+    console.log("inside kyc docs")
+    const transaction = req.transaction!;
+    try {
+        const { adharNumber, panNumber } = req.body;
+
+        const userKycDocs = await getUserKycDocs(adharNumber, panNumber, transaction);
+
+        if (userKycDocs) {
+            if (userKycDocs.adharNumber === adharNumber && userKycDocs.panNumber === panNumber) {
+                await transaction.rollback();
+                return sendResponse(res, 500, "Both Adhar and Pan document are already uploaded.");
+            }
+            if (userKycDocs.adharNumber === adharNumber) {
+                await transaction.rollback();
+                return sendResponse(res, 500, "Adhar document is already uploaded.");
+            }
+            if (userKycDocs.panNumber === panNumber) {
+                await transaction.rollback();
+                return sendResponse(res, 500, "Pan document is already uploaded.");
+            }
+        }
+        next();
+    } catch (error) {
+        await transaction.rollback();
+        return sendResponse(res, 500, 'Something went wrongggggggg');
     }
 }

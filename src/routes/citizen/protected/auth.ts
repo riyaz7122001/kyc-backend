@@ -6,7 +6,7 @@ import { Router } from "express";
 
 const router = Router();
 
-router.get("/logout", Logout("admin"));
+router.get("/logout", Logout("citizen"));
 router.get("/profile", GetUserProfile);
 router.put("/change-password", ChangePasswordValidationRules(), ValidateReqParams, ValidateChangePassword, ChangePassword);
 

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChangePasswordValidationRules = exports.ResetPasswordValidationRules = exports.ForgotPasswordValidationRules = exports.TokenValidationRules = exports.LoginOtpValidationRules = exports.LoginValidationRules = exports.ValidateReqParams = void 0;
+exports.IdValidationRules = exports.PaginationValidationRules = exports.ChangePasswordValidationRules = exports.ResetPasswordValidationRules = exports.ForgotPasswordValidationRules = exports.TokenValidationRules = exports.LoginOtpValidationRules = exports.LoginValidationRules = exports.ValidateReqParams = void 0;
 const api_1 = require("../../utility/api");
 const express_validator_1 = require("express-validator");
 const ValidateReqParams = async (req, res, next) => {
@@ -105,3 +105,35 @@ const ChangePasswordValidationRules = () => {
     ];
 };
 exports.ChangePasswordValidationRules = ChangePasswordValidationRules;
+const PaginationValidationRules = () => {
+    return [
+        (0, express_validator_1.query)('size')
+            .not().isEmpty().withMessage('Size is required').bail()
+            .isInt({ min: 1, max: 100 }).withMessage('Size must be an Integer, between 1 and 100').bail()
+            .toInt(),
+        (0, express_validator_1.query)('page')
+            .not().isEmpty().withMessage('Page is required').bail()
+            .isInt({ min: 1 }).withMessage('Page must be an Integer, greater than 0').bail()
+            .toInt(),
+        (0, express_validator_1.query)('search')
+            .optional({ values: 'falsy' })
+            .toLowerCase()
+            .trim(),
+        (0, express_validator_1.query)('sortKey')
+            .optional({ values: 'falsy' })
+            .isIn(['name', 'email', 'phone', 'role', 'active']).withMessage('SortKey should be one of name, email, phone, role, active')
+            .trim(),
+        (0, express_validator_1.query)('sortDir')
+            .optional({ values: 'falsy' })
+            .isIn(['ASC', 'DESC']).withMessage('SortDir should be one of ASC, DESC')
+            .trim(),
+    ];
+};
+exports.PaginationValidationRules = PaginationValidationRules;
+const IdValidationRules = () => {
+    return [
+        (0, express_validator_1.param)('id')
+            .isUUID().withMessage('Id must be of type UUID').bail(),
+    ];
+};
+exports.IdValidationRules = IdValidationRules;

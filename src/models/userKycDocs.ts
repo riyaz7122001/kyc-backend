@@ -1,17 +1,18 @@
 import sequelize from "@setup/database";
-import { Model, DataTypes } from "sequelize";
+import { Model, DataTypes, Optional } from "sequelize";
 import { literal } from "sequelize";
 
 export type UserKycDocsAttributes = {
     id: string;
     kycId: string;
-    adharCardPic: string;
-    panCardPic: Date | null;
+    adharCardPic: string | null;
+    panCardPic: string | null;
     adharNumber: string | null;
     panNumber: string | null;
 }
 
-export type UserKycDocsInstance = Model<UserKycDocsAttributes> & UserKycDocsAttributes;
+type UserKycDocsCreationAttributes = Optional<UserKycDocsAttributes, "id">;
+export type UserKycDocsInstance = Model<UserKycDocsCreationAttributes> & UserKycDocsCreationAttributes;
 
 const userKycDocs = sequelize.define<UserKycDocsInstance>("userKycDocs", {
     id: {
@@ -27,14 +28,17 @@ const userKycDocs = sequelize.define<UserKycDocsInstance>("userKycDocs", {
             model: "kyc",
             key: "id",
         },
+        unique: true
     },
     adharCardPic: {
         type: DataTypes.TEXT,
-        allowNull: true
+        allowNull: true,
+        defaultValue: null
     },
     panCardPic: {
         type: DataTypes.TEXT,
-        allowNull: true
+        allowNull: true,
+        defaultValue: null
     },
     adharNumber: {
         type: DataTypes.STRING(50),

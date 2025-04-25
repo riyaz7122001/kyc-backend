@@ -8,9 +8,6 @@ const createAdmin_1 = require("./createAdmin");
 const logger_1 = __importDefault(require("@setup/logger"));
 const adminMigrationsFolder = "migrations";
 const seedersFolder = "seeders";
-// Arguments passed like: `npm run migrate admin`
-const args = process.argv.slice(2);
-console.log("args", args);
 const runMigration = () => {
     try {
         logger_1.default.debug("Running Admin Migrations...");

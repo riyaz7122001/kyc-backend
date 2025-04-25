@@ -1,6 +1,6 @@
 import { getEmailTemplate } from "@models/helpers";
 import { revokeEmailTokens, saveEmailToken } from "@models/helpers/auth";
-import { changeCitizenActivation, createCitizen, deleteCitizen, editCitizen, getCitizenDetails, getCitizenList, updateKycStatus } from "@models/helpers/citizen";
+import { changeCitizenActivation, createCitizen, deleteCitizen, editCitizen, getCitizenDetails, getCitizenList, getUserKyc, updateCitizenKycStatus, updateKycStatus } from "@models/helpers/citizen";
 import logger from "@setup/logger";
 import { FRONTEND_URL } from "@setup/secrets";
 import { ProtectedPayload } from "@type/auth";
@@ -60,7 +60,7 @@ export const CreateCitizen = async (req: RequestWithPayload<ProtectedPayload>, r
         logger.debug(`Email token saved successfully`);
 
         logger.debug(`Updating status for userId: ${userId}`);
-        await updateKycStatus(userId, "pending", transaction);
+        await updateKycStatus(user.id!, "pending", userId, transaction);
         logger.debug(`Kyc status updated successfully`);
 
         logger.debug(`Sending email to: ${email}`);
@@ -152,24 +152,51 @@ export const ChangeCitizenActivation = async (req: RequestWithPayload<ProtectedP
 
         sendResponse(res, 200, `Citizen ${active ? 'activated' : 'deactivated'} successfully`);
     } catch (error) {
-
         await transaction.rollback();
         next(error);
     }
 }
 
-export const UploadDocs = async (req: RequestWithPayload<ProtectedPayload>, res: Response, next: NextFunction) => {
+export const AcceptKyc = async (req: RequestWithPayload<ProtectedPayload>, res: Response, next: NextFunction) => {
     const transaction = req.transaction!;
     try {
-        const { userId } = req.payload!;
+        const id = req.params!.id;
+        const userId = req.payload!.userId;
 
-        logger.debug(`Checking adhar and pan card details`);
-        // await updateKycDocsDocuments(userId, transaction);
-        logger.debug(`Details checked successfully`);
+        logger.debug("Fetching citizen kyc status");
+        const userKycStatus = await getUserKyc(userId, transaction);
+        if (userKycStatus?.status === "verified") {
+            await transaction.rollback();
+            sendResponse(res, 400, "Citizen kyc already verified");
+        }
+        logger.debug(`Citizen kyc fetched successfully`)
+
+        logger.debug(`Changing Kyc status for userId: ${id}`);
+        await updateCitizenKycStatus(id, "verified", userId, transaction);
+        logger.debug(`Citizen activation status changed successfully`);
 
         await transaction.commit();
 
-        sendResponse(res, 200, "Document uplaoded successfully");
+        sendResponse(res, 200, `Citizen Kyc verified successfully`);
+    } catch (error) {
+        await transaction.rollback();
+        next(error);
+    }
+}
+
+export const RejectKyc = async (req: RequestWithPayload<ProtectedPayload>, res: Response, next: NextFunction) => {
+    const transaction = req.transaction!;
+    try {
+        const id = req.params!.id;
+        const userId = req.payload!.userId;
+
+        logger.debug(`Changing Kyc status for userId: ${id}`);
+        await updateKycStatus(id, "rejected", userId, transaction);
+        logger.debug(`Citizen activation status changed successfully`);
+
+        await transaction.commit();
+
+        sendResponse(res, 200, `Citizen Kyc rejected successfully`);
     } catch (error) {
         await transaction.rollback();
         next(error);

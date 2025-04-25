@@ -17,7 +17,7 @@ kyc.belongsTo(users, {
     foreignKey: "userId"
 });
 users.hasOne(kyc, {
-    foreignKey: "userId"
+    foreignKey: "userId",
 });
 userKycDocs.belongsTo(kyc, {
     foreignKey: "kycId"

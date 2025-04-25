@@ -23,7 +23,7 @@ module.exports = {
                 },
             },
             status: {
-                type: ENUM("pending", "verified", "rejected"),
+                type: ENUM("pending", "processing", "verified", "rejected"),
                 allowNull: false,
                 defaultValue: "pending"
             },

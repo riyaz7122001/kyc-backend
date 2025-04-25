@@ -29,7 +29,7 @@ const kyc = sequelize.define<KycInstance>("kyc", {
     status: {
         type: DataTypes.ENUM,
         allowNull: false,
-        values: ["pending", "verified", "rejected"],
+        values: ["pending", "processing", "verified", "rejected"],
         defaultValue: "pending"
     },
     statusUpdatedOn: {

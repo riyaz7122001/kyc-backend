@@ -6,7 +6,7 @@ const common_1 = require("@middleware/common");
 const validator_1 = require("@middleware/common/validator");
 const express_1 = require("express");
 const router = (0, express_1.Router)();
-router.get("/logout", (0, auth_2.Logout)("admin"));
+router.get("/logout", (0, auth_2.Logout)("citizen"));
 router.get("/profile", auth_1.GetUserProfile);
 router.put("/change-password", (0, validator_1.ChangePasswordValidationRules)(), validator_1.ValidateReqParams, common_1.ValidateChangePassword, auth_2.ChangePassword);
 exports.default = router;

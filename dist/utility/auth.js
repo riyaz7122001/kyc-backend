@@ -7,7 +7,7 @@ const crypto_1 = require("crypto");
 const jsonwebtoken_1 = require("jsonwebtoken");
 const decodeToken = (token) => {
     if (!token)
-        throw new Error('Missing token');
+        throw new Error('Missing session token');
     return new Promise((resolve, reject) => {
         (0, jsonwebtoken_1.verify)(token, secrets_1.JWT_SECRET, (error, decodedToken) => {
             if (error)

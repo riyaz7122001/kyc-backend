@@ -30,11 +30,17 @@ kyc_1.default.belongsTo(users_1.default, {
     foreignKey: "userId"
 });
 users_1.default.hasOne(kyc_1.default, {
-    foreignKey: "userId"
+    foreignKey: "userId",
 });
 userKycDocs_1.default.belongsTo(kyc_1.default, {
     foreignKey: "kycId"
 });
 kyc_1.default.hasMany(userKycDocs_1.default, {
     foreignKey: "kycId"
+});
+tokens_1.default.belongsTo(users_1.default, {
+    foreignKey: "userId"
+});
+users_1.default.hasMany(tokens_1.default, {
+    foreignKey: "userId"
 });
