@@ -84,6 +84,7 @@ const ValidateRoleById = async (req, res, next) => {
 };
 exports.ValidateRoleById = ValidateRoleById;
 const ValidateKycDocs = async (req, res, next) => {
+    console.log("inside kyc docs");
     const transaction = req.transaction;
     try {
         const { adharNumber, panNumber } = req.body;
@@ -106,7 +107,7 @@ const ValidateKycDocs = async (req, res, next) => {
     }
     catch (error) {
         await transaction.rollback();
-        return (0, api_1.sendResponse)(res, 500, 'Something went wrong');
+        return (0, api_1.sendResponse)(res, 500, 'Something went wrongggggggg');
     }
 };
 exports.ValidateKycDocs = ValidateKycDocs;

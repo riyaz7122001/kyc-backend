@@ -1,6 +1,6 @@
 import { getEmailTemplate } from "@models/helpers";
 import { revokeEmailTokens, saveEmailToken } from "@models/helpers/auth";
-import { changeCitizenActivation, createCitizen, deleteCitizen, editCitizen, getCitizenDetails, getCitizenList, getUserKyc, updateKycStatus, upsertKycDocsDocuments } from "@models/helpers/citizen";
+import { changeCitizenActivation, createCitizen, deleteCitizen, editCitizen, getCitizenDetails, getCitizenList, getUserKyc, updateCitizenKycStatus, updateKycStatus, upsertKycDocsDocuments } from "@models/helpers/citizen";
 import logger from "@setup/logger";
 import { FRONTEND_URL } from "@setup/secrets";
 import { ProtectedPayload } from "@type/auth";
@@ -182,13 +182,13 @@ export const UploadDocs = async (req: RequestWithPayload<ProtectedPayload>, res:
         }
         logger.debug(`User kyc record fetched successfully`);
 
-        if (userKycRecord.status === "pending" || userKycRecord.status === "rejected") {
+        if (userKycRecord.status === "pending" || userKycRecord.status === "processing" || userKycRecord.status === "rejected") {
             logger.debug(`Uploading Aadhaar/Pan card document`);
             const { created } = await upsertKycDocsDocuments(userKycRecord.id!, adharBase64, panBase64, adharNumber, panNumber, transaction);
             if (created) logger.debug(`Document uploaded successfully`);
 
             logger.debug(`Updating status from pending to processing`);
-            updateKycStatus(userId, "processing", userId, transaction);
+            await updateCitizenKycStatus(userId, "processing", userId, transaction);
             logger.debug(`Status updated successfully`)
         } else {
             await transaction.rollback();
