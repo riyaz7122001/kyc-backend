@@ -168,10 +168,56 @@ const RejectKyc = async (req, res, next) => {
     const transaction = req.transaction;
     try {
         const id = req.params.id;
-        const userId = req.payload.userId;
+        const { userId, email } = req.payload;
         logger_1.default.debug(`Changing Kyc status for userId: ${id}`);
-        await (0, citizen_1.updateKycStatus)(id, "rejected", userId, transaction);
+        await (0, citizen_1.updateCitizenKycStatus)(id, "rejected", userId, transaction);
         logger_1.default.debug(`Citizen activation status changed successfully`);
+        const html = `<!DOCTYPE html>
+        <html lang="en">
+        <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>KYC Document Rejected</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="flex items-center justify-center min-h-screen bg-gray-100">
+        <div class="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
+            
+            <div class="flex justify-center mb-4">
+            <svg fill="red" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" 
+                xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+                width="40px" height="40px" viewBox="0 0 41.756 41.756" 
+                style="enable-background:new 0 0 41.756 41.756;" xml:space="preserve">
+                <g>
+                <path d="M27.948,20.878L40.291,8.536c1.953-1.953,1.953-5.119,0-7.071
+                    c-1.951-1.952-5.119-1.952-7.07,0L20.878,13.809L8.535,1.465
+                    c-1.951-1.952-5.119-1.952-7.07,0c-1.953,1.953-1.953,5.119,0,7.071l12.342,12.342L1.465,33.22
+                    c-1.953,1.953-1.953,5.119,0,7.071C2.44,41.268,3.721,41.755,5,41.755
+                    c1.278,0,2.56-0.487,3.535-1.464l12.343-12.342l12.343,12.343
+                    c0.976,0.977,2.256,1.464,3.535,1.464s2.56-0.487,3.535-1.464
+                    c1.953-1.953,1.953-5.119,0-7.071L27.948,20.878z"/>
+                </g>
+            </svg>
+            </div>
+
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">KYC Document Rejected</h1>
+            <p class="text-gray-600 mb-6">
+            Your uploaded document did not meet the verification criteria.<br>Please upload it again.
+            </p>
+
+            <a href="/auth/login" class="inline-block">
+            <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+                Upload Again
+            </button>
+            </a>
+
+        </div>
+        </body>
+        </html>`;
+        const subject = `Kyc Rejected`;
+        logger_1.default.debug(`Sending email to userId: ${id}`);
+        emailQueue_1.emailQueue.push({ to: email, subject, html, retry: 0 });
+        logger_1.default.debug(`Email sent successfully`);
         await transaction.commit();
         (0, api_1.sendResponse)(res, 200, `Citizen Kyc rejected successfully`);
     }

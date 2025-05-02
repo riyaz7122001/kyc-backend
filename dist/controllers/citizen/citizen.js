@@ -161,13 +161,13 @@ const UploadDocs = async (req, res, next) => {
             return (0, api_1.sendResponse)(res, 400, "Kyc record not found for user");
         }
         logger_1.default.debug(`User kyc record fetched successfully`);
-        if (userKycRecord.status === "pending" || userKycRecord.status === "rejected") {
+        if (userKycRecord.status === "pending" || userKycRecord.status === "processing" || userKycRecord.status === "rejected") {
             logger_1.default.debug(`Uploading Aadhaar/Pan card document`);
             const { created } = await (0, citizen_1.upsertKycDocsDocuments)(userKycRecord.id, adharBase64, panBase64, adharNumber, panNumber, transaction);
             if (created)
                 logger_1.default.debug(`Document uploaded successfully`);
             logger_1.default.debug(`Updating status from pending to processing`);
-            (0, citizen_1.updateKycStatus)(userId, "processing", userId, transaction);
+            await (0, citizen_1.updateCitizenKycStatus)(userId, "processing", userId, transaction);
             logger_1.default.debug(`Status updated successfully`);
         }
         else {

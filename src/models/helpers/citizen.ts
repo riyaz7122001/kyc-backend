@@ -1,5 +1,5 @@
 import { users, roles, kyc, userKycDocs } from '../index';
-import { Op, Order, Transaction } from "sequelize";
+import { col, fn, Op, Order, Transaction } from "sequelize";
 
 export const getCitizenList = async (limit: number, offset: number, sortKey: string | null, sortDir: 'ASC' | 'DESC' | null, search: string | null, transaction: Transaction) => {
     const searchCondition = search ? {
@@ -240,4 +240,43 @@ export const getUserKycDocs = async (adharNumber: string, panNumber: string, tra
     });
 
     return userDocs;
+}
+
+export const getDashboardDetails = async () => {
+    try {
+        const totalUsers = await users.count();
+
+        const kycCounts = await kyc.findAll({
+            attributes: [
+                'status',
+                [fn('COUNT', col('status')), 'count']
+            ],
+            group: ['status']
+        });
+
+        // Convert to object for easy access
+        const statusCountMap: Record<string, number> = {
+            pending: 0,
+            processing: 0,
+            verified: 0,
+            rejected: 0
+        };
+
+        for (const row of kycCounts) {
+            const status = row.getDataValue('status') as string;
+            const count = parseInt(row.getDataValue('count' as any)); // or: as unknown as string
+
+            if (status && statusCountMap.hasOwnProperty(status)) {
+                statusCountMap[status] = count;
+            }
+        }
+
+        return {
+            totalUsers,
+            kycStatusCounts: statusCountMap
+        };
+    } catch (error) {
+        console.error("Error fetching dashboard details:", error);
+        throw error;
+    };
 }

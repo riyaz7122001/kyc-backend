@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ValidateKycDocs = exports.ValidateRoleById = exports.ValidateCitizenId = exports.ValidateEditCitizen = exports.ValidateCreateCitizen = void 0;
+exports.ValidateKyc = exports.ValidateRoleById = exports.ValidateCitizenId = exports.ValidateEditCitizen = exports.ValidateCreateCitizen = void 0;
 const api_1 = require("@utility/api");
 const helpers_1 = require("@models/helpers");
 const citizen_1 = require("@models/helpers/citizen");
@@ -58,6 +58,11 @@ const ValidateCitizenId = async (req, res, next) => {
             await transaction.rollback();
             return (0, api_1.sendResponse)(res, 404, 'Citizen not found');
         }
+        req.payload = {
+            userId: user.id,
+            email: user.email,
+            passwordHash: user.passwordHash,
+        };
         next();
     }
     catch (error) {
@@ -83,31 +88,24 @@ const ValidateRoleById = async (req, res, next) => {
     }
 };
 exports.ValidateRoleById = ValidateRoleById;
-const ValidateKycDocs = async (req, res, next) => {
-    console.log("inside kyc docs");
+const ValidateKyc = async (req, res, next) => {
     const transaction = req.transaction;
     try {
-        const { adharNumber, panNumber } = req.body;
-        const userKycDocs = await (0, citizen_1.getUserKycDocs)(adharNumber, panNumber, transaction);
-        if (userKycDocs) {
-            if (userKycDocs.adharNumber === adharNumber && userKycDocs.panNumber === panNumber) {
-                await transaction.rollback();
-                return (0, api_1.sendResponse)(res, 500, "Both Adhar and Pan document are already uploaded.");
-            }
-            if (userKycDocs.adharNumber === adharNumber) {
-                await transaction.rollback();
-                return (0, api_1.sendResponse)(res, 500, "Adhar document is already uploaded.");
-            }
-            if (userKycDocs.panNumber === panNumber) {
-                await transaction.rollback();
-                return (0, api_1.sendResponse)(res, 500, "Pan document is already uploaded.");
-            }
+        const { userId } = req.payload;
+        const userKycRecord = await (0, citizen_1.getUserKyc)(userId, transaction);
+        if (!userKycRecord) {
+            await transaction.rollback();
+            return (0, api_1.sendResponse)(res, 400, "Kyc record not found for user");
+        }
+        if (userKycRecord.status === "verified") {
+            await transaction.rollback();
+            return (0, api_1.sendResponse)(res, 400, "User kyc is already verified");
         }
         next();
     }
     catch (error) {
         await transaction.rollback();
-        return (0, api_1.sendResponse)(res, 500, 'Something went wrongggggggg');
+        return (0, api_1.sendResponse)(res, 500, 'Something went wrong');
     }
 };
-exports.ValidateKycDocs = ValidateKycDocs;
+exports.ValidateKyc = ValidateKyc;

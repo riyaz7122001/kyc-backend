@@ -1,6 +1,6 @@
 import { getEmailTemplate } from "@models/helpers";
 import { revokeEmailTokens, saveEmailToken } from "@models/helpers/auth";
-import { changeCitizenActivation, createCitizen, deleteCitizen, editCitizen, getCitizenById, getCitizenDetails, getCitizenList, getUserKyc, updateCitizenKycStatus, updateKycStatus } from "@models/helpers/citizen";
+import { changeCitizenActivation, createCitizen, deleteCitizen, editCitizen, getCitizenById, getCitizenDetails, getCitizenList, getDashboardDetails, getUserKyc, updateCitizenKycStatus, updateKycStatus } from "@models/helpers/citizen";
 import logger from "@setup/logger";
 import { FRONTEND_URL } from "@setup/secrets";
 import { ProtectedPayload } from "@type/auth";
@@ -245,6 +245,23 @@ export const RejectKyc = async (req: RequestWithPayload<ProtectedPayload>, res: 
         await transaction.commit();
 
         sendResponse(res, 200, `Citizen Kyc rejected successfully`);
+    } catch (error) {
+        await transaction.rollback();
+        next(error);
+    }
+}
+
+export const GetDashboardDetails = async (req: RequestWithPayload<ProtectedPayload>, res: Response, next: NextFunction) => {
+    const transaction = req.transaction!;
+    try {
+
+        logger.debug(`Fetching dashboard details`);
+        const details = await getDashboardDetails();
+        logger.debug(`Dashboard details fetched successfully`);
+
+        await transaction.commit();
+
+        sendResponse(res, 200, `Dashboard details fetched successfully`, details);
     } catch (error) {
         await transaction.rollback();
         next(error);

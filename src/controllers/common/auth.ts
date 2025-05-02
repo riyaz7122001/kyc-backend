@@ -1,4 +1,4 @@
-import { getEmailTemplate } from "@models/helpers";
+import { getEmailTemplate, getUserByEmail } from "@models/helpers";
 import { deleteOtps, revokeEmailTokens, saveEmailToken, saveOtp, updatePassword, updatePreviousPassword, useOtp, validateOtp } from "@models/helpers/auth";
 import logger from "@setup/logger";
 import { COOKIE_SAME_SITE, COOKIE_SECURE, FRONTEND_URL } from "@setup/secrets";
@@ -33,6 +33,10 @@ export const Login = (userRole: Role) => async (req: RequestWithPayload<LoginPay
         const jwt = await generateJWTToken(userId, email, userRole, sessionId);
         logger.debug(`Session Id and Jwt token generated successfully`);
 
+        logger.debug(`Fetching user details for userId: ${userId} and email: ${email}`);
+        const user = await getUserByEmail(email, false, transaction);
+        logger.debug(`User details fetched successfully`);
+
         res.cookie(`${userRole.toUpperCase()}_SESSION_TOKEN`, jwt, {
             maxAge: 14 * 24 * 60 * 60 * 1000,
             httpOnly: true,
@@ -42,7 +46,7 @@ export const Login = (userRole: Role) => async (req: RequestWithPayload<LoginPay
 
         await transaction.rollback();
 
-        sendResponse(res, 200, "User logged in successfully");
+        sendResponse(res, 200, "User logged in successfully", user);
     } catch (error) {
         await transaction.rollback();
         next(error);

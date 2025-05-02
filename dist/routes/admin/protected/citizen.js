@@ -13,5 +13,5 @@ router.put("/edit/:id", (0, validator_1.EditCitizenValidationRules)(), validator
 router.delete("/delete/:id", (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_1.DeleteCitizen);
 router.put("/activation/:id", (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_1.ChangeCitizenActivation);
 router.put("/accept/:id", (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_1.AcceptKyc);
-router.put("/reject/:id", (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_1.RejectKyc);
+router.put("/reject/:id", (0, validator_2.IdValidationRules)(), validator_2.ValidateReqParams, citizen_2.ValidateCitizenId, citizen_2.ValidateKyc, citizen_1.RejectKyc);
 exports.default = router;

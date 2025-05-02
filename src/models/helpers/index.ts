@@ -1,10 +1,16 @@
 import { Op } from 'sequelize';
-import { users, emailTemplate } from '../index';
+import { users, emailTemplate, roles } from '../index';
 import { Transaction } from "sequelize"
 
 export const getUserByEmail = async (email: string, isDeleted: boolean, transaction: Transaction) => {
     const user = await users.findOne({
         attributes: ['id', 'activationStatus', 'email', 'passwordHash', 'passwordSetOn'],
+        include: [
+            {
+                model: roles,
+                attributes: ["id", "role"]
+            }
+        ],
         where: { email, isDeleted },
         transaction
     });
