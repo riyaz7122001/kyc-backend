@@ -31,6 +31,9 @@ const Login = (userRole) => async (req, res, next) => {
         const sessionId = await (0, auth_2.generateRefreshToken)(20);
         const jwt = await (0, auth_2.generateJWTToken)(userId, email, userRole, sessionId);
         logger_1.default.debug(`Session Id and Jwt token generated successfully`);
+        logger_1.default.debug(`Fetching user details for userId: ${userId} and email: ${email}`);
+        const user = await (0, helpers_1.getUserByEmail)(email, false, transaction);
+        logger_1.default.debug(`User details fetched successfully`);
         res.cookie(`${userRole.toUpperCase()}_SESSION_TOKEN`, jwt, {
             maxAge: 14 * 24 * 60 * 60 * 1000,
             httpOnly: true,
@@ -38,7 +41,7 @@ const Login = (userRole) => async (req, res, next) => {
             sameSite: secrets_1.COOKIE_SAME_SITE
         });
         await transaction.rollback();
-        (0, api_1.sendResponse)(res, 200, "User logged in successfully");
+        (0, api_1.sendResponse)(res, 200, "User logged in successfully", user);
     }
     catch (error) {
         await transaction.rollback();

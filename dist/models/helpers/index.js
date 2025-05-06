@@ -6,6 +6,12 @@ const index_1 = require("../index");
 const getUserByEmail = async (email, isDeleted, transaction) => {
     const user = await index_1.users.findOne({
         attributes: ['id', 'activationStatus', 'email', 'passwordHash', 'passwordSetOn'],
+        include: [
+            {
+                model: index_1.roles,
+                attributes: ["id", "role"]
+            }
+        ],
         where: { email, isDeleted },
         transaction
     });

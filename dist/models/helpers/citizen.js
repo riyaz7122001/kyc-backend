@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserKycDocs = exports.updateCitizenKycStatus = exports.upsertKycDocsDocuments = exports.getUserKyc = exports.updateKycStatus = exports.getCitizenByEmail = exports.getRoleById = exports.changeCitizenActivation = exports.getCitizenDetails = exports.getCitizenById = exports.deleteCitizen = exports.editCitizen = exports.createCitizen = exports.getCitizenList = void 0;
+exports.getDashboardDetails = exports.getUserKycDocs = exports.updateCitizenKycStatus = exports.upsertKycDocsDocuments = exports.getUserKyc = exports.updateKycStatus = exports.getCitizenByEmail = exports.getRoleById = exports.changeCitizenActivation = exports.getCitizenDetails = exports.getCitizenById = exports.deleteCitizen = exports.editCitizen = exports.createCitizen = exports.getCitizenList = void 0;
 const index_1 = require("../index");
 const sequelize_1 = require("sequelize");
 const getCitizenList = async (limit, offset, sortKey, sortDir, search, transaction) => {
@@ -218,3 +218,39 @@ const getUserKycDocs = async (adharNumber, panNumber, transaction) => {
     return userDocs;
 };
 exports.getUserKycDocs = getUserKycDocs;
+const getDashboardDetails = async () => {
+    try {
+        const totalUsers = await index_1.users.count();
+        const kycCounts = await index_1.kyc.findAll({
+            attributes: [
+                'status',
+                [(0, sequelize_1.fn)('COUNT', (0, sequelize_1.col)('status')), 'count']
+            ],
+            group: ['status']
+        });
+        // Convert to object for easy access
+        const statusCountMap = {
+            pending: 0,
+            processing: 0,
+            verified: 0,
+            rejected: 0
+        };
+        for (const row of kycCounts) {
+            const status = row.getDataValue('status');
+            const count = parseInt(row.getDataValue('count')); // or: as unknown as string
+            if (status && statusCountMap.hasOwnProperty(status)) {
+                statusCountMap[status] = count;
+            }
+        }
+        return {
+            totalUsers,
+            kycStatusCounts: statusCountMap
+        };
+    }
+    catch (error) {
+        console.error("Error fetching dashboard details:", error);
+        throw error;
+    }
+    ;
+};
+exports.getDashboardDetails = getDashboardDetails;

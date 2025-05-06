@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RejectKyc = exports.AcceptKyc = exports.ChangeCitizenActivation = exports.DeleteCitizen = exports.GetCitizenDetails = exports.EditCitizen = exports.CreateCitizen = exports.GetCitizensList = void 0;
+exports.GetDashboardDetails = exports.RejectKyc = exports.AcceptKyc = exports.ChangeCitizenActivation = exports.DeleteCitizen = exports.GetCitizenDetails = exports.EditCitizen = exports.CreateCitizen = exports.GetCitizensList = void 0;
 const helpers_1 = require("@models/helpers");
 const auth_1 = require("@models/helpers/auth");
 const citizen_1 = require("@models/helpers/citizen");
@@ -227,3 +227,18 @@ const RejectKyc = async (req, res, next) => {
     }
 };
 exports.RejectKyc = RejectKyc;
+const GetDashboardDetails = async (req, res, next) => {
+    const transaction = req.transaction;
+    try {
+        logger_1.default.debug(`Fetching dashboard details`);
+        const details = await (0, citizen_1.getDashboardDetails)();
+        logger_1.default.debug(`Dashboard details fetched successfully`);
+        await transaction.commit();
+        (0, api_1.sendResponse)(res, 200, `Dashboard details fetched successfully`, details);
+    }
+    catch (error) {
+        await transaction.rollback();
+        next(error);
+    }
+};
+exports.GetDashboardDetails = GetDashboardDetails;
