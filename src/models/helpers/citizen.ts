@@ -244,7 +244,11 @@ export const getUserKycDocs = async (adharNumber: string, panNumber: string, tra
 
 export const getDashboardDetails = async () => {
     try {
-        const totalUsers = await users.count();
+        const totalUsers = await users.count({
+            where: {
+                isDeleted: false
+            }
+        });
 
         const kycCounts = await kyc.findAll({
             attributes: [
